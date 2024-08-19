@@ -1,0 +1,55 @@
+name: mongo-replica-set
+services:
+  mongodb1:
+    image: mongo:latest
+    container_name: mongodb1
+    ports:
+      - "30001:27017"
+    volumes:
+      - mongo1-data:/data/db
+      - ./mongo.key:/data/mongo.key
+      - ./mongod.conf:/etc/mongo/mongod.conf
+      - ./mongo.sh:/scripts/mongo.sh
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=oskarin
+      - MONGO_INITDB_ROOT_PASSWORD=oskarin
+    links:
+      - mongodb2
+    depends_on:
+      - mongodb2
+    networks:
+      - mongoNet
+    command: >
+      bash -c "
+      chmod 400 /data/mongo.key &&
+      chown mongodb:mongodb /data/mongo.key &&
+      mongod --config /etc/mongo/mongod.conf --bind_ip_all --replSet mongoSet --keyFile /data/mongo.key
+      "
+  mongodb2:
+    image: mongo:latest
+    container_name: mongodb2
+    ports:
+      - "30002:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=oskarin
+      - MONGO_INITDB_ROOT_PASSWORD=oskarin
+    volumes:
+      - mongo2-data:/data/db
+      - ./mongo.key:/data/mongo.key
+      - ./mongod.conf:/etc/mongo/mongod.conf
+    networks:
+      - mongoNet
+    command: >
+      bash -c "
+      chmod 400 /data/mongo.key &&
+      chown mongodb:mongodb /data/mongo.key &&
+      mongod --config /etc/mongo/mongod.conf --bind_ip_all --replSet mongoSet --keyFile /data/mongo.key
+      "
+
+networks:
+  mongoNet:
+    driver: bridge
+
+volumes:
+  mongo1-data:
+  mongo2-data:
